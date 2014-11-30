@@ -11,18 +11,22 @@
   sjcl.keyexchange.ssrp = {
     count: 2048,
     _serialize: function(point) {
-      point = point.get();
-      point = sjcl.codec.base64.fromBits(point.x.concat(point.y));
-      return point;
+      if (point.get != null) {
+        point = point.get();
+        point = sjcl.codec.base64.fromBits(point.x.concat(point.y));
+        return point;
+      } else {
+        return sjcl.codec.base64.fromBits(point.toBits());
+      }
     },
-    _unserialize: function(curve, point) {
-      return new sjcl.ecc.elGamal.publicKey(curve, sjcl.codec.base64.toBits(point));
+    _unserialize: function(point, curve) {
+      return curve.fromBits(sjcl.codec.base64.toBits(point));
     },
     _generatePrivateKey: function(password, salt, curve) {
       var length, x;
       length = Math.floor((curve.r.bitLength() - 1) / 8);
       x = sjcl.misc.pbkdf2(password, salt, this.count, length);
-      return new sjcl.bn(x);
+      return new sjcl.bn('0x' + sjcl.codec.hex.fromBits(x));
     },
     makeVerifier: function(username, password, curve) {
       var salt, x;
@@ -35,23 +39,27 @@
       }
       salt = sjcl.random.randomWords(2, 10);
       x = this._generatePrivateKey(username + '.' + password, salt, curve);
-      return this._serialize(curve.G.mult(x));
+      return [sjcl.codec.base64.fromBits(salt), this._serialize(curve.G.mult(x))];
     },
     makeChallenge: function(curve) {
-      var kp;
-      kp = sjcl.ecc.elGamal.generateKeys(curve);
-      kp.pub = this._serialize(kp.pub);
-      return kp;
+      var pub, sec;
+      sec = sjcl.bn.random(curve.r);
+      pub = this._serialize(curve.G.mult(sec));
+      return {
+        pub: pub,
+        sec: sec
+      };
     },
     makeResponse: function(username, password, salt, chall, curve) {
       var x;
+      salt = sjcl.codec.base64.toBits(salt);
       x = this._generatePrivateKey(username + '.' + password, salt, curve);
-      chall = this._unserialize(chall);
+      chall = this._unserialize(chall, curve);
       return this._serialize(chall.mult(x));
     },
-    verify: function(sec, verifier, resp) {
+    verify: function(sec, verifier, resp, curve) {
       var rightResp;
-      verifier = this._unserialize(verifier);
+      verifier = this._unserialize(verifier, curve);
       rightResp = this._serialize(verifier.mult(sec));
       return rightResp === resp;
     }
