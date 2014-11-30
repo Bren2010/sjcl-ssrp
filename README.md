@@ -1,9 +1,9 @@
 SJCL Small SRP
 ==============
 
-Small SRP is a password authentication mechanism that has the same
-password-related security properties as SRP, but is significantly more efficient
-and aimed at web apps.
+Small SRP is a password authentication mechanism for web applications that has
+the same password-related security properties as SRP but is significantly more
+efficient.
 
 1.  Write-up:  http://bren2010.github.io/2014/11/29/small-srp.html
 2.  Demo:  http://bren2010.github.io/sjcl-ssrp/
