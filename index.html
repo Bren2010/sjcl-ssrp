@@ -1,0 +1,87 @@
+<!-- The most effective way to prove that your crypto is good is to make a
+website that looks like it's straight out of the 1980s and does a kind-of-sort-
+of demo of your code that's of little value to anyone. -->
+
+<html>
+    <head>
+        <title>SJCL Small SRP Demo</title>
+
+        <style type="text/css">
+            body {
+                font-family: Courier
+            }
+        </style>
+
+        <script type="text/javascript" src="./sjcl.js"></script>
+        <script type="text/javascript" src="./ssrp.js"></script>
+        <script type="text/javascript">
+            var curve = sjcl.ecc.curves.c192
+
+            window.onload = function () {
+                document.getElementById('submit1').onclick = function () {
+                    user = document.getElementById('username1').value
+                    pass = document.getElementById('password1').value
+
+                    verif = sjcl.keyexchange.ssrp.makeVerifier(user, pass, curve)
+
+                    document.getElementById('salt').innerHTML = verif[0]
+                    document.getElementById('verifier').innerHTML = verif[1]
+                }
+
+                document.getElementById('submit2').onclick = function () {
+                    salt = document.getElementById('salt').innerHTML
+                    verifier = document.getElementById('verifier').innerHTML
+
+                    if (salt == 'null' || verifier == 'null') {
+                        return alert('Generate a verifier first!')
+                    }
+
+                    user = document.getElementById('username2').value
+                    pass = document.getElementById('password2').value
+
+                    chall = sjcl.keyexchange.ssrp.makeChallenge(curve)
+                    document.getElementById('chall').innerHTML = chall.pub
+
+                    resp = sjcl.keyexchange.ssrp.makeResponse(user, pass, salt, chall.pub, curve)
+                    document.getElementById('resp').innerHTML = resp
+
+                    ok = sjcl.keyexchange.ssrp.verify(chall.sec, verifier, resp, curve)
+                    document.getElementById('success').innerHTML = ok
+                }
+            }
+        </script>
+    </head>
+    <body>
+        <center>
+            <noscript>JavaScript must be enabled!</noscript>
+
+            <table border="1" cellpadding="20px">
+                <tr>
+                    <td colspan="2"><center>
+                        <b>Salt:</b> <span id="salt">null</span><br />
+                        <b>Verifier:</b> <span id="verifier">null</span>
+                    </center></td>
+                </tr>
+                <tr>
+                    <td><center>
+                        Username:&nbsp;<input type="text" id="username1" /><br />
+                        Password:&nbsp;<input type="password" id="password1" /><br />
+                        <input type="submit" id="submit1" value="Generate Verifier" />
+                    </center></td>
+                    <td><center>
+                        Username:&nbsp;<input type="text" id="username2" /><br />
+                        Password:&nbsp;<input type="password" id="password2" /><br />
+                        <input type="submit" id="submit2" value="Attempt Login" />
+                    </center></td>
+                </tr>
+                <tr>
+                    <td colspan="2"><center>
+                        <b>Last Challenge:</b> <span id="chall">null</span><br />
+                        <b>Last Response Sent:</b> <span id="resp">null</span><br />
+                        <b>Successful login? :</b> <span id="success">null</span>
+                    </center></td>
+                </tr>
+            </table>
+        </center>
+    </body>
+</html>
